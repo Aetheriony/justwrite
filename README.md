@@ -22,7 +22,7 @@ Check the app: [JustWrite](https://justwrite-yhimanshu220456.vercel.app/signup)
 
 ### Configuration
 
-- Database URLs:
+- Database URL:
   - Prisma Accelerate URL: Configure in `wrangler.toml`.
     ```toml
     # wrangler.toml
