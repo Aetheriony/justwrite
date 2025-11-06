@@ -161,7 +161,6 @@ export const FullBlog = ({ blog }: { blog: Blog }) => {
         }
     };
 
-
     const handleMute = async () => {
         try {
             const token = localStorage.getItem("token");

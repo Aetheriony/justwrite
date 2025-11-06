@@ -57,6 +57,45 @@ export const Publish = () => {
         }
     };
 
+    const handlePublish = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                notifyError("You are not logged in, please login first to post.");
+                return;
+            }
+
+            const response = await axios.post(
+                `${BACKEND_URL}/api/v1/blog/publish`,
+                {
+                    title,
+                    content: description,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            // ✅ Navigate to newly published blog
+            navigate(`/blog/${response.data.id}`);
+
+            notifySuccess("Post Published Successfully");
+        } catch (e: unknown) {
+            const error = e as CustomError;
+            console.error("Publish post error:", error);
+
+            if (error.response && error.response.status === 403) {
+                notifyError("You are not logged in, please login first to post.");
+            } else {
+                notifyError("Failed to publish post. Please try again.");
+            }
+        }
+    };
+
+
 
     return (
         <div className="dark:bg-slate-800 min-h-screen">
@@ -81,31 +120,7 @@ export const Publish = () => {
                     />
 
                     <button
-                        onClick={async () => {
-                            try {
-                                const response = await axios.post(`${BACKEND_URL}/api/v1/blog/publish`, {
-                                    title,
-                                    content: description
-                                }, {
-                                    headers: {
-                                        Authorization: localStorage.getItem("token")
-                                    }
-                                });
-
-                                navigate(`/blog/${response.data.id}`);
-
-                                notifySuccess('Post Published Successfully');
-
-                            } catch (e: unknown) {
-                                const error = e as CustomError;
-                                console.error("Publish post error:", error);
-                                if (error.response && error.response.status === 403) {
-                                    notifyError('You are not logged in, please login first to post.');
-                                } else {
-                                    notifyError('Failed to publish post. Please try again.');
-                                }
-                            }
-                        }}
+                        onClick={handlePublish}
                         className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none mt-4"
                     >
                         Publish Post
