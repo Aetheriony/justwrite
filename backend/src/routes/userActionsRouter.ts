@@ -31,6 +31,7 @@ userActionsRouter.post("/follow/:authorId", authMiddleware, async (c) => {
       return c.json({ message: "You cannot follow yourself." });
     }
 
+    // Upsert the follow relation
     await prisma.follow.upsert({
       where: {
         followerId_followingId: { followerId, followingId },
@@ -38,6 +39,13 @@ userActionsRouter.post("/follow/:authorId", authMiddleware, async (c) => {
       update: {},
       create: { followerId, followingId },
     });
+
+    // Get follower details
+    const follower = await prisma.user.findUnique({
+      where: { id: followerId },
+      select: { name: true, username: true },
+    });
+
 
     return c.json({
       message: "You are now following this author.",
@@ -63,6 +71,13 @@ userActionsRouter.delete("/unfollow/:authorId", authMiddleware, async (c) => {
         followerId_followingId: { followerId, followingId },
       },
     });
+
+    const follower = await prisma.user.findUnique({
+      where: { id: followerId },
+      select: { name: true, username: true },
+    });
+
+
 
     return c.json({
       message: "You unfollowed this author.",
@@ -96,6 +111,13 @@ userActionsRouter.post("/mute/:authorId", authMiddleware, async (c) => {
       create: { userId, mutedUserId },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, username: true },
+    });
+
+ 
+
     return c.json({
       message: "Author has been muted successfully.",
     });
@@ -121,6 +143,13 @@ userActionsRouter.delete("/unmute/:authorId", authMiddleware, async (c) => {
       },
     });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, username: true },
+    });
+
+
+
     return c.json({
       message: "You unmuted this author.",
     });
@@ -128,5 +157,32 @@ userActionsRouter.delete("/unmute/:authorId", authMiddleware, async (c) => {
     console.error("Error in unmute:", error);
     c.status(500);
     return c.json({ message: "Failed to unmute author." });
+  }
+});
+
+userActionsRouter.get("/notifications", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { receiverId: userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        message: true,
+        type: true,
+        isRead: true,
+        createdAt: true,
+      },
+    });
+
+    return c.json({ notifications });
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    c.status(500);
+    return c.json({ message: "Failed to fetch notifications." });
   }
 });

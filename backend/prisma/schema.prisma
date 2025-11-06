@@ -8,20 +8,17 @@ datasource db {
 }
 
 model User {
-  id               Int               @id @default(autoincrement())
-  name             String?
-  username         String            @unique
-  password         String
-  blogs            Blog[]
-  recommendations  Recommendation[]
-
-  // 👇 Follow relationships
-  followers        Follow[]          @relation("UserFollowers")   // users who follow this user
-  following        Follow[]          @relation("UserFollowing")   // users this user follows
-
-  // 👇 Mute relationships
-  mutedBy          Mute[]            @relation("UserMutedBy")     // users who muted this user
-  mutedUsers       Mute[]            @relation("UserMutes")       // users this user muted
+  id              Int              @id @default(autoincrement())
+  name            String?
+  username        String           @unique
+  password        String
+  blogs           Blog[]
+  followers       Follow[]         @relation("UserFollowers")
+  following       Follow[]         @relation("UserFollowing")
+  mutedBy         Mute[]           @relation("UserMutedBy")
+  mutedUsers      Mute[]           @relation("UserMutes")
+  recommendations Recommendation[]
+  notifications   Notification[]   @relation("UserNotifications")
 }
 
 model Blog {
@@ -31,7 +28,7 @@ model Blog {
   title               String
   published           Boolean          @default(false)
   createdAt           DateTime         @default(now())
-  recommendationCount Int               @default(0)
+  recommendationCount Int              @default(0)
   author              User             @relation(fields: [authorId], references: [id])
   recommendations     Recommendation[]
 }
@@ -43,8 +40,8 @@ model Recommendation {
   action    String
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  blog      Blog     @relation(fields: [blogId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  blog Blog @relation(fields: [blogId], references: [id])
 
   @@unique([userId, blogId])
 }
@@ -55,7 +52,7 @@ model Follow {
   followingId Int
   createdAt   DateTime @default(now())
 
-  follower User @relation("UserFollowing", fields: [followerId], references: [id])
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id])
   following User @relation("UserFollowers", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
@@ -71,4 +68,14 @@ model Mute {
   mutedUser User @relation("UserMutedBy", fields: [mutedUserId], references: [id])
 
   @@unique([userId, mutedUserId])
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  type       String
+  message    String
+  receiverId Int
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  receiver   User     @relation("UserNotifications", fields: [receiverId], references: [id])
 }

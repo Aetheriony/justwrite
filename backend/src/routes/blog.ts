@@ -169,7 +169,6 @@ blogRouter.get('/bulk', async (c) => {
                 },
             },
         });
-console.log("blogs",blogs);
         return c.json({ blogs });
     } catch (error) {
         console.error("Error fetching blogs:", error);

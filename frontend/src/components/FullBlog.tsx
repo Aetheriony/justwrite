@@ -127,7 +127,7 @@ export const FullBlog = ({ blog }: { blog: Blog }) => {
                 return;
             }
             
-            const authorId = blog.author?.id || blog.authorId; // ✅ fallback logic
+            const authorId = blog.author?.id
 
             if (!authorId) {
                 toast.error("Author ID not available.");
@@ -170,7 +170,7 @@ export const FullBlog = ({ blog }: { blog: Blog }) => {
                 return;
             }
 
-            const authorId = blog.author?.id || blog.authorId; // ✅ fallback logic
+            const authorId = blog.author?.id
 
             if (!authorId) {
                 toast.error("Author ID not available.");

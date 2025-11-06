@@ -18,6 +18,7 @@ import { Politics } from './pages/tags/Politics';
 import { Finance } from './pages/tags/Finance';
 import { Career } from './pages/tags/Career';
 import { Explore } from './pages/tags/Explore';
+import { NotificationsPage } from './components/NotificationsPage';
 
 function App() {
 
@@ -43,6 +44,8 @@ function App() {
           <Route path="/tags/Finance" element={<Finance />} />
           <Route path="/tags/Politics" element={<Politics />} />
           <Route path="/tags/Explore" element={<Explore />} />
+          <Route path="/notifications" element={<NotificationsPage/>} />
+
 
           <Route path="/blog/update/:id" element={<UpdateBlogPage />} />
 

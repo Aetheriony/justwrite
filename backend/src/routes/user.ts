@@ -11,11 +11,11 @@ export const userRouter = new Hono<{
   };
 }>();
 
-const getPrismaClient = (c: Hono["context"]) => {
-  return new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-};
+// const getPrismaClient = (c: Hono["context"]) => {
+//   return new PrismaClient({
+//     datasourceUrl: c.env.DATABASE_URL,
+//   }).$extends(withAccelerate());
+// };
 
 
 //signup route----------------------------------->
