@@ -8,19 +8,67 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  name     String?
-  username String  @unique
-  password String
-  blogs    Blog[]
+  id               Int               @id @default(autoincrement())
+  name             String?
+  username         String            @unique
+  password         String
+  blogs            Blog[]
+  recommendations  Recommendation[]
+
+  // 👇 Follow relationships
+  followers        Follow[]          @relation("UserFollowers")   // users who follow this user
+  following        Follow[]          @relation("UserFollowing")   // users this user follows
+
+  // 👇 Mute relationships
+  mutedBy          Mute[]            @relation("UserMutedBy")     // users who muted this user
+  mutedUsers       Mute[]            @relation("UserMutes")       // users this user muted
 }
 
 model Blog {
+  id                  Int              @id @default(autoincrement())
+  authorId            Int
+  content             String
+  title               String
+  published           Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  recommendationCount Int               @default(0)
+  author              User             @relation(fields: [authorId], references: [id])
+  recommendations     Recommendation[]
+}
+
+model Recommendation {
   id        Int      @id @default(autoincrement())
-  authorId  Int
-  content   String
-  title     String
-  published Boolean  @default(false)
-  createdAt DateTime @default(now()) // Added createdAt field
-  author    User     @relation(fields: [authorId], references: [id])
+  userId    Int
+  blogId    Int
+  action    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  blog      Blog     @relation(fields: [blogId], references: [id])
+
+  @@unique([userId, blogId])
+}
+
+model Follow {
+  id          Int      @id @default(autoincrement())
+  followerId  Int
+  followingId Int
+  createdAt   DateTime @default(now())
+
+  follower User @relation("UserFollowing", fields: [followerId], references: [id])
+  following User @relation("UserFollowers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+}
+
+model Mute {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  mutedUserId Int
+  createdAt   DateTime @default(now())
+
+  user      User @relation("UserMutes", fields: [userId], references: [id])
+  mutedUser User @relation("UserMutedBy", fields: [mutedUserId], references: [id])
+
+  @@unique([userId, mutedUserId])
 }

@@ -20,6 +20,11 @@ export const blogRouter = new Hono<{
 }>();
 
 
+function getPrisma(c: any) {
+    return new PrismaClient({
+        datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate());
+}
 
 blogRouter.post('/publish', authMiddleware, async (c) => {
     const body = await c.req.json();
@@ -50,62 +55,48 @@ blogRouter.post('/publish', authMiddleware, async (c) => {
 })
 
 
-blogRouter.put('/update/:id', authMiddleware, async (c) => {
-    const id = Number(c.req.param('id'));
-
-    const userId = Number(c.get('userId')); // Get user ID from middleware context
+blogRouter.put("/update/:id", authMiddleware, async (c) => {
+    const blogId = Number(c.req.param("id"));
     const body = await c.req.json();
 
-    // Initialize Prisma client
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate());
-
-    // Validate the input
-    const { success } = updateBlogInput.safeParse(body);
-    if (!success) {
-        c.status(411); // Length Required - Appropriate status code for validation issues
-        return c.json({
-            message: "Invalid inputs provided."
-        });
+    // Validate request
+    const parsed = updateBlogInput.safeParse({ ...body, id: blogId });
+    if (!parsed.success) {
+        c.status(400);
+        return c.json({ message: "Invalid input format" });
     }
 
+    const prisma = getPrisma(c);
+
     try {
-        // Find the blog to check if it belongs to the user
-        const blog = await prisma.blog.findFirst({
-            where: {
-                id: id,
-                authorId: userId,
-            }
+        // Verify that the blog belongs to the logged-in user
+        const existingBlog = await prisma.blog.findUnique({
+            where: { id: blogId },
+            select: { authorId: true },
         });
 
-        if (!blog) {
-            c.status(403); // Forbidden - User is not authorized to update this blog
-            return c.json({
-                message: 'You are not authorized to update this blog.',
-            });
+        if (!existingBlog || existingBlog.authorId !== c.get("userId")) {
+            c.status(403);
+            return c.json({ message: "You are not authorized to edit this blog." });
         }
 
         // Update the blog
         const updatedBlog = await prisma.blog.update({
-            where: {
-                id: body.id
-            },
+            where: { id: blogId },
             data: {
                 title: body.title,
-                content: body.content
-            }
+                content: body.content,
+            },
         });
 
         return c.json({
-            id: updatedBlog.id
+            message: "Blog updated successfully!",
+            blog: updatedBlog,
         });
-    } catch (e) {
-        console.error(e); // Log the error for debugging
-        c.status(500); // Internal Server Error
-        return c.json({
-            message: "Error while updating blog post."
-        });
+    } catch (error) {
+        console.error("Error updating blog:", error);
+        c.status(500);
+        return c.json({ message: "Failed to update blog." });
     }
 });
 
@@ -155,63 +146,80 @@ blogRouter.delete('/delete/:id', authMiddleware, async (c) => {
 });
 
 
-
-
 // Todo: add pagination
 blogRouter.get('/bulk', async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
-    const blogs = await prisma.blog.findMany({
-        select: {
-            content: true,
-            title: true,
-            id: true,
-            author: {
-                select: {
-                    name: true
-                }
-            }
-        }
-    });
-
-    return c.json({
-        blogs
-    })
-})
-
-blogRouter.get('/:id', async (c) => {
-    const id = c.req.param("id");
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env.DATABASE_URL,
-    }).$extends(withAccelerate())
+    const prisma = getPrisma(c);
 
     try {
-        const blog = await prisma.blog.findFirst({
-            where: {
-                id: Number(id)
+        const blogs = await prisma.blog.findMany({
+            orderBy: {
+                createdAt: 'desc', // 👈 newest first
             },
             select: {
                 id: true,
                 title: true,
                 content: true,
+                createdAt: true,
                 author: {
                     select: {
-                        name: true
-                    }
-                }
-            }
-        })
-        return c.json({
-            blog
+                        id: true,
+                        name: true,
+                        username: true, 
+                    },
+                },
+            },
         });
-    } catch (e) {
-        c.status(411); // 4
-        return c.json({
-            message: "Error while fetching blog post"
-        });
+console.log("blogs",blogs);
+        return c.json({ blogs });
+    } catch (error) {
+        console.error("Error fetching blogs:", error);
+        c.status(500);
+        return c.json({ message: "Failed to fetch blogs" });
     }
-})
+});
+
+blogRouter.get('/:id', async (c) => {
+    const id = Number(c.req.param("id"));
+    const prisma = getPrisma(c);
+
+    try {
+        // Validate ID
+        if (isNaN(id)) {
+            c.status(400);
+            return c.json({ message: "Invalid blog ID." });
+        }
+
+        // ✅ Fetch complete blog with author info
+        const blog = await prisma.blog.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                createdAt: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        username: true,
+                    },
+                },
+            },
+        });
+
+        if (!blog) {
+            c.status(404);
+            return c.json({ message: "Blog not found." });
+        }
+
+        // ✅ Return full blog object
+        return c.json(blog);
+    } catch (error) {
+        console.error("Error fetching blog post:", error);
+        c.status(500);
+        return c.json({ message: "Internal Server Error." });
+    }
+});
 
 
 // Route to get top picks---------------
@@ -251,21 +259,27 @@ blogRouter.post("/with-ai", authMiddleware, async (c) => {
         }
 
         const genAI = new GoogleGenerativeAI(c.env.GEMINI_API_KEY);
+        // Ensure you use a GA model name like gemini-2.5-flash as previously discussed
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-      Write a detailed blog post titled "${title}".
-      - Include an introduction, a few main paragraphs, and a conclusion.
-      - Write in plain text (no markdown, lists, or symbols).
-      - Keep it informative and engaging.
-    `;
+            Generate a detailed, informative, and engaging blog post on the topic "${title}".
+            
+         INSTRUCTION: DO NOT include the title in the generated text. Start your response directly with the introduction paragraph.
+            
+            - Structure the response with an introduction, several main body sections (using ## for section titles), and a conclusion.
+            - Format the entire response using standard Markdown.
+            - Use appropriate Markdown headings (##), bold text (**), and lists (*) for structure.
+        `;
 
         const result = await model.generateContent(prompt);
         const text = result.response.text();
 
+        // The text variable will now contain the content with Markdown syntax
         return c.json({ content: text });
     } catch (error) {
         console.error("Error generating content:", error);
         return c.json({ error: "Failed to generate content" }, 500);
     }
 });
+

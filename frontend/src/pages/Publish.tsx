@@ -4,7 +4,7 @@ import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import { ChangeEvent, useState } from "react";
 import { notifyError, notifySuccess } from "../components/Notification";
-
+import { MarkdownPreview } from "../components/MarkdownPreview";
 
 interface CustomError extends Error {
     response?: {
@@ -12,10 +12,51 @@ interface CustomError extends Error {
     };
 }
 
+
 export const Publish = () => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const navigate = useNavigate();
+    const [aiContent, setAiContent] = useState("");
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerateWithAI = async () => {
+        setIsGenerating(true);
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                notifyError("Token is missing. Please login first.");
+                return;
+            }
+
+            const response = await axios.post(
+                `${BACKEND_URL}/api/v1/blog/with-ai`,
+                { title },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const generatedContent = response.data.content;
+            setDescription(generatedContent);
+            setAiContent(generatedContent);
+            notifySuccess("Content generated successfully.");
+        } catch (e: unknown) {
+            const error = e as CustomError;
+            if (error.response && error.response.status === 403) {
+                notifyError("You are not logged in, please login first to generate.");
+            } else {
+                notifyError("Failed to generate content. Please try again.");
+            }
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
 
     return (
         <div className="dark:bg-slate-800 min-h-screen">
@@ -31,7 +72,7 @@ export const Publish = () => {
                         className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-lg rounded-lg block p-2.5 focus:outline-none"
                         placeholder="Title"
                     />
-
+                    {aiContent && <MarkdownPreview content={aiContent} />}
                     <TextEditor
                         value={description}
                         onChange={(e) => {
@@ -71,40 +112,13 @@ export const Publish = () => {
                     </button>
 
                     <button
-                        onClick={async () => {
-                            try {
-                                const token = localStorage.getItem("token");
-                                if (!token) {
-                                    notifyError('Token is missing. Please login first.');
-                                    return;
-                                }
-
-                                const response = await axios.post(`${BACKEND_URL}/api/v1/blog/with-ai`, {
-                                    title
-                                }, {
-                                    headers: {
-                                        Authorization: localStorage.getItem("token")
-                                    }
-                                });
-
-                                setDescription(response.data.content); // Update the description with AI
-                                notifySuccess('Content generated successfully.');
-
-                            } catch (e: unknown) {
-                                const error = e as CustomError;
-                                // console.error("Generate with AI error:", error); // Log error details
-                                if (error.response && error.response.status === 403) {
-                                    notifyError('You are not logged in, please login first to generate.');
-                                } else {
-                                    notifyError('Failed to generate content. Please try again.');
-                                }
-                            }
-                        }}
-                        className="bg-yellow-500 hover:bg-yellow-700 text-black font-bold py-3 px-4 rounded-lg focus:outline-none mt-4 mx-4"
+                        onClick={handleGenerateWithAI}
+                        disabled={isGenerating}
+                        className={`${isGenerating ? "bg-gray-400" : "bg-yellow-500 hover:bg-yellow-700"
+                            } text-black font-bold py-3 px-4 rounded-lg focus:outline-none mt-4 mx-4`}
                     >
-                        Generate with AI
+                        {isGenerating ? "Generating..." : "Generate with AI"}
                     </button>
-
                 </div>
             </div>
         </div>
