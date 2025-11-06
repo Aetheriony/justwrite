@@ -242,44 +242,30 @@ blogRouter.get('/top-picks', async (c) => {
     }
 });
 
-
-blogRouter.post('/with-ai', authMiddleware, async (c) => {
-    const genAI = new GoogleGenerativeAI(c.env.GEMINI_API_KEY || '');
-
+blogRouter.post("/with-ai", authMiddleware, async (c) => {
     try {
-        // Retrieve the generative model
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const { title } = await c.req.json();
 
-        // Parse request data
-        const data = await c.req.json();
+        if (!title) {
+            return c.json({ error: "Title is required" }, 400);
+        }
 
-        // Define the prompt
-        const prompt = `Write a blog post based on the title: "${data.title}". 
-The content should:
-1. Include a brief introduction to the topic.
-2. Have a logically flowing main body divided into at least four sections without using headings or special formatting.
-3. End with a conclusion that summarizes key points and includes a call to action inviting readers to share their thoughts.
-Ensure the content is in plain text format, free of any markdown, headings, or special characters such as \`***\`. Make it engaging and valuable for the readers.`;
+        const genAI = new GoogleGenerativeAI(c.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const prompt = `
+      Write a detailed blog post titled "${title}".
+      - Include an introduction, a few main paragraphs, and a conclusion.
+      - Write in plain text (no markdown, lists, or symbols).
+      - Keep it informative and engaging.
+    `;
 
         const result = await model.generateContent(prompt);
-        console.log(result)
-        // Return the content
-        return new Response(JSON.stringify({ result }), {
-            headers: { 'Content-Type': 'application/json' },
-        });
+        const text = result.response.text();
 
-    } catch (error: any) {
-        if (error.status === 429) {
-            console.error('Rate limit exceeded:', error);
-            return new Response(
-                JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-                { status: 429, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-        console.error('Error generating content:', error);
-        return new Response(
-            JSON.stringify({ error: 'An error occurred while generating the blog post.' }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
+        return c.json({ content: text });
+    } catch (error) {
+        console.error("Error generating content:", error);
+        return c.json({ error: "Failed to generate content" }, 500);
     }
 });

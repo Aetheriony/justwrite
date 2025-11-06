@@ -1,11 +1,12 @@
 name = "justwrite"
+main = "src/index.ts" 
 compatibility_date = "2024-07-01"
 
 [vars]
-DATABASE_URL = "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiYjUwYjFmMzktNjY0MS00MTdlLTlhZjctZTdkMjY4MWY2MTgzIiwidGVuYW50X2lkIjoiNGNjZTc4MzJiYWEyN2U4MWY3MjgxNjgwOTAzYjg2YjAxOWNkMzlkM2U2MDVhZGE2Nzk4NjE1YTMxZmQ1YTRhOSIsImludGVybmFsX3NlY3JldCI6ImZlYjJhMjlmLWEwM2MtNDZmMi1iZTU1LTk0ZDNlYmUwMmMxYyJ9.z9kpesqtQGqgHm0WPYsn4yQUz17xnJtbOMmXAnRYTxQ"
-GEMINI_API_KEY = "AIzaSyCoJgND8xluFVoHTc56kBeRAiRomGs1Lho"
-JWT_SECRET = "jchwfwwe34r4gfrdrdr6547"
 
+JWT_SECRET="jchwfwwe34r4gfrdrdr6547"
+GEMINI_API_KEY="AIzaSyBzanoA2jo2XfLoX-pnPb7iOf4YW9EfQ7A"
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19RcC1TeUZRaVR2dkhaczktV1dnajAiLCJhcGlfa2V5IjoiMDFLOUM0TTc1N0FQUzNKNVcxOFFCR1JYUTciLCJ0ZW5hbnRfaWQiOiJlMDYyZjljMzJhYWRlMDA1YzIzYTY5ZGZmZDYxZGFmYzJjODAxOWU0NDJjNDA5MDk4MWQzMmVlOTBlMzNjNjlhIiwiaW50ZXJuYWxfc2VjcmV0IjoiYzU5OWNkYzEtMTk5YS00ZGRkLWE2OTQtZDhkODUzMjU4ZjdkIn0.3mWqV1ZiyQD-wq2ic1JBRMocAALbkZXdlyuUQLAlKlw"
 
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"

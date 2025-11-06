@@ -5,16 +5,16 @@
   },
   "dependencies": {
     "@100xdevs/medium-common": "^1.0.0",
-    "@google/generative-ai": "^0.15.0",
+    "@google/generative-ai": "^0.24.1",
     "@huggingface/inference": "^2.8.1",
-    "@prisma/client": "^5.17.0",
-    "@prisma/extension-accelerate": "^0.6.3",
+    "@prisma/client": "^6.19.0",
+    "@prisma/extension-accelerate": "^2.0.2",
     "hono": "^4.0.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
     "@types/node": "^20.14.11",
     "prisma": "^5.22.0",
-    "wrangler": "^3.25.0"
+    "wrangler": "^4.45.4"
   }
 }
